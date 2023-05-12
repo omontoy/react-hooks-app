@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -36,6 +36,29 @@ function Ingredients() {
   };
 
   console.log(userIngredients);
+
+  const fetchData = async () => {
+    const response = await fetch(
+      "https://react-hooks-review-b7200-default-rtdb.firebaseio.com/ingredients.json"
+    );
+    const data = await response.json();
+    console.log("data", data);
+
+    const loadedIngredients = [];
+    for (const key in data) {
+      loadedIngredients.push({
+        id: key,
+        title: data[key].title,
+        amount: data[key].amount,
+      });
+    }
+
+    setUserIngredients(loadedIngredients);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <div className="App">
