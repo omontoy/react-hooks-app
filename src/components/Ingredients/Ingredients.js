@@ -29,7 +29,14 @@ function Ingredients() {
     }
   };
 
-  const removeIngredientHandler = (ingredientId) => {
+  const removeIngredientHandler = async (ingredientId) => {
+    await fetch(
+      `https://react-hooks-review-b7200-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
+      {
+        method: "DELETE",
+      }
+    );
+
     setUserIngredients((prevIngredients) =>
       prevIngredients.filter((ingredient) => ingredient.id !== ingredientId)
     );
