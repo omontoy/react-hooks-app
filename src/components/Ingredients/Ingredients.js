@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer } from "react";
+import React, { useCallback, useMemo, useReducer } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -49,7 +49,7 @@ function Ingredients() {
 
   const [httpState, dispatchHttp] = useReducer(httpReducer, initialHttp);
 
-  const addIngredientHandler = async (newIngredient) => {
+  const addIngredientHandler = useCallback(async (newIngredient) => {
     dispatchHttp({ type: "SEND" });
     try {
       const response = await fetch(
@@ -76,9 +76,9 @@ function Ingredients() {
     } catch (error) {
       dispatchHttp({ type: "ERROR", errorMessage: "Something went wrong !!" });
     }
-  };
+  }, []);
 
-  const removeIngredientHandler = async (ingredientId) => {
+  const removeIngredientHandler = useCallback(async (ingredientId) => {
     dispatchHttp({ type: "SEND" });
     try {
       await fetch(
@@ -93,7 +93,7 @@ function Ingredients() {
       dispatchHttp({ type: "ERROR" });
       dispatchHttp({ type: "RESPONSE" });
     }
-  };
+  }, []);
 
   console.log("INGREDIENTS", userIngredients);
 
@@ -104,6 +104,15 @@ function Ingredients() {
   const cleanError = () => {
     dispatchHttp({ type: "CLEAR" });
   };
+
+  const ingredientList = useMemo(() => {
+    return (
+      <IngredientList
+        ingredients={userIngredients}
+        onRemoveItem={removeIngredientHandler}
+      />
+    );
+  }, [userIngredients, removeIngredientHandler]);
 
   return (
     <div className="App">
@@ -117,10 +126,7 @@ function Ingredients() {
 
       <section>
         <Search onEnteringInput={filteredIngredientsHandler} />
-        <IngredientList
-          ingredients={userIngredients}
-          onRemoveItem={removeIngredientHandler}
-        />
+        {ingredientList}
       </section>
     </div>
   );
