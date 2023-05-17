@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer, useState } from "react";
+import React, { useCallback, useReducer } from "react";
 
 import IngredientForm from "./IngredientForm";
 import IngredientList from "./IngredientList";
@@ -19,20 +19,38 @@ const ingredientsReducer = (state, action) => {
   }
 };
 
-const initialState = [];
+const initialIngredients = [];
+
+const httpReducer = (state, action) => {
+  switch (action.type) {
+    case "SEND":
+      return { ...state, loading: true };
+    case "RESPONSE":
+      return { ...state, loading: false };
+    case "ERROR":
+      return { loading: false, error: action.errorMessage };
+    case "CLEAR":
+      return { ...state, error: null };
+    default:
+      return state;
+  }
+};
+
+const initialHttp = {
+  loading: false,
+  error: null,
+};
 
 function Ingredients() {
-  const [userIngredients, dispatch] = useReducer(
+  const [userIngredients, dispatchIngredients] = useReducer(
     ingredientsReducer,
-    initialState
+    initialIngredients
   );
 
-  // const [userIngredients, setUserIngredients] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [httpState, dispatchHttp] = useReducer(httpReducer, initialHttp);
 
   const addIngredientHandler = async (newIngredient) => {
-    setLoading(true);
+    dispatchHttp({ type: "SEND" });
     try {
       const response = await fetch(
         "https://react-hooks-review-b7200-default-rtdb.firebaseio.com/ingredients.json",
@@ -48,24 +66,20 @@ function Ingredients() {
       if (response.ok) {
         const data = await response.json();
 
-        setLoading(false);
+        dispatchHttp({ type: "RESPONSE" });
 
-        // setUserIngredients((prevIngredients) => [
-        //   ...prevIngredients,
-        //   { id: data.name, ...newIngredient },
-        // ]);
-        dispatch({
+        dispatchIngredients({
           type: "ADD",
           ingredient: { id: data.name, ...newIngredient },
         });
       }
     } catch (error) {
-      setError("Something went wrong !!");
+      dispatchHttp({ type: "ERROR", errorMessage: "Something went wrong !!" });
     }
   };
 
   const removeIngredientHandler = async (ingredientId) => {
-    setLoading(true);
+    dispatchHttp({ type: "SEND" });
     try {
       await fetch(
         `https://react-hooks-review-b7200-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
@@ -73,35 +87,32 @@ function Ingredients() {
           method: "DELETE",
         }
       );
-      setLoading(false);
-
-      // setUserIngredients((prevIngredients) =>
-      //   prevIngredients.filter((ingredient) => ingredient.id !== ingredientId)
-      // );
-      dispatch({ type: "DELETE", id: ingredientId });
+      dispatchHttp({ type: "RESPONSE" });
+      dispatchIngredients({ type: "DELETE", id: ingredientId });
     } catch (error) {
-      setError("Something went wrong !!");
-      setLoading(false);
+      dispatchHttp({ type: "ERROR" });
+      dispatchHttp({ type: "RESPONSE" });
     }
   };
 
   console.log("INGREDIENTS", userIngredients);
 
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
-    // setUserIngredients(filteredIngredients);
-    dispatch({ type: "LOAD", ingredients: filteredIngredients });
+    dispatchIngredients({ type: "LOAD", ingredients: filteredIngredients });
   }, []);
 
   const cleanError = () => {
-    setError(null);
+    dispatchHttp({ type: "CLEAR" });
   };
 
   return (
     <div className="App">
-      {error && <ErrorModal onClose={cleanError}>{error}</ErrorModal>}
+      {httpState.error && (
+        <ErrorModal onClose={cleanError}>{httpState.error}</ErrorModal>
+      )}
       <IngredientForm
         onAddIngredient={addIngredientHandler}
-        loading={loading}
+        loading={httpState.loading}
       />
 
       <section>
