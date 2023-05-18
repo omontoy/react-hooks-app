@@ -37,9 +37,9 @@ const initialState = {
 const useFetch = () => {
   const [httpState, dispatchHttp] = useReducer(httpReducer, initialState);
 
-  const clear = () => {
+  const clear = useCallback(() => {
     dispatchHttp({ type: "CLEAR" });
-  };
+  }, []);
 
   const sendRequest = useCallback(
     async (url, method, body, reqExtra, reqIdentifier) => {
